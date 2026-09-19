@@ -117,3 +117,115 @@ def parse_electricity(
         )
     except (TypeError, ValueError) as err:
         raise OwlProtocolError(f"unexpected value in packet: {err}") from err
+
+
+@dataclass(frozen=True)
+class DeviceStatus:
+    """Answer to GET,DEVICE,(index)."""
+
+    index: int
+    address: str
+    device_type: str
+    seconds_since_rx: int
+    state: int
+    rssi: int
+    lqi: int
+    battery: str
+    rx_packets: int
+    tx_packets: int
+
+
+@dataclass(frozen=True)
+class ElectricityConfig:
+    """Answer to GET,ELECTRICITY: mode 0=single phase, 1=three phase, 2=PV."""
+
+    mode: int
+    flags: int
+    voltage: float
+    power_factor: float
+
+
+def _fields(raw: str, command: str, minimum: int) -> list[str]:
+    parts = raw.strip().split(",")
+    if len(parts) < 2 or parts[0] != "OK" or parts[1] != command:
+        raise OwlProtocolError(f"unexpected response to {command}: {raw!r}")
+    fields = parts[2:]
+    if len(fields) < minimum:
+        raise OwlProtocolError(f"too few fields in response to {command}: {raw!r}")
+    return fields
+
+
+def _int(value: str, raw: str) -> int:
+    try:
+        return int(value)
+    except ValueError as err:
+        raise OwlProtocolError(f"expected integer in {raw!r}") from err
+
+
+def _float(value: str, raw: str) -> float:
+    try:
+        return float(value)
+    except ValueError as err:
+        raise OwlProtocolError(f"expected number in {raw!r}") from err
+
+
+def parse_device_status(raw: str) -> DeviceStatus:
+    f = _fields(raw, "DEVICE", 10)
+    return DeviceStatus(
+        index=_int(f[0], raw),
+        address=f[1],
+        device_type=f[2],
+        seconds_since_rx=_int(f[3], raw),
+        state=_int(f[4], raw),
+        rssi=_int(f[5], raw),
+        lqi=_int(f[6], raw),
+        battery=f[7],
+        rx_packets=_int(f[8], raw),
+        tx_packets=_int(f[9], raw),
+    )
+
+
+def parse_device_list(raw: str) -> tuple[str, ...]:
+    return tuple(_fields(raw, "DEVICE", 1))
+
+
+def parse_electricity_config(raw: str) -> ElectricityConfig:
+    f = _fields(raw, "ELECTRICITY", 4)
+    return ElectricityConfig(
+        mode=_int(f[0], raw),
+        flags=_int(f[1], raw),
+        voltage=_float(f[2], raw),
+        power_factor=_float(f[3], raw),
+    )
+
+
+def format_electricity_config(cfg: ElectricityConfig) -> tuple[str, ...]:
+    """Arguments for SET,ELECTRICITY in the form the device echoes back."""
+    voltage = str(int(cfg.voltage)) if cfg.voltage.is_integer() else f"{cfg.voltage:g}"
+    return (str(cfg.mode), str(cfg.flags), voltage, f"{cfg.power_factor:.2f}")
+
+
+def parse_clock(raw: str) -> tuple[int, int]:
+    f = _fields(raw, "CLOCK", 2)
+    return _int(f[0], raw), _int(f[1], raw)
+
+
+def parse_udp_target(raw: str) -> tuple[str, int]:
+    f = _fields(raw, "UDP", 3)  # hostname (unused), ip, port
+    return f[1], _int(f[2], raw)
+
+
+def parse_mac(raw: str) -> str:
+    f = _fields(raw, "MAC", 1)
+    try:
+        return normalize_mac(f[0])
+    except ValueError as err:
+        raise OwlProtocolError(str(err)) from err
+
+
+def parse_version(raw: str) -> str:
+    return " ".join(part for part in _fields(raw, "VERSION", 1) if part)
+
+
+def parse_uptime(raw: str) -> str:
+    return ",".join(_fields(raw, "UPTIME", 1)).strip()

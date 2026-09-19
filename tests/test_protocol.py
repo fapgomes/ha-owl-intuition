@@ -81,3 +81,86 @@ def test_normalize_mac_formats(raw: str) -> None:
 def test_normalize_mac_rejects_wrong_length() -> None:
     with pytest.raises(ValueError):
         normalize_mac("4437190006")
+
+from custom_components.owl_intuition.protocol import (  # noqa: E402
+    DeviceStatus,
+    ElectricityConfig,
+    format_electricity_config,
+    parse_clock,
+    parse_device_list,
+    parse_device_status,
+    parse_electricity_config,
+    parse_mac,
+    parse_udp_target,
+    parse_uptime,
+    parse_version,
+)
+
+
+def test_parse_device_status_real_response() -> None:
+    status = parse_device_status(
+        "OK,DEVICE,0,2FC,CMR180,28,0,-51,1,1,3,0,0.0:0,0.00,0,0,0,0.00"
+    )
+    assert status == DeviceStatus(
+        index=0,
+        address="2FC",
+        device_type="CMR180",
+        seconds_since_rx=28,
+        state=0,
+        rssi=-51,
+        lqi=1,
+        battery="1",
+        rx_packets=3,
+        tx_packets=0,
+    )
+
+
+def test_parse_device_list() -> None:
+    raw = "OK,DEVICE,CMR180,NONE,NONE,NONE,NONE,NONE,NONE,NONE,NONE,NONE"
+    assert parse_device_list(raw) == ("CMR180",) + ("NONE",) * 9
+
+
+def test_parse_electricity_config_and_format_roundtrip() -> None:
+    cfg = parse_electricity_config("OK,ELECTRICITY,1,7,230,1.00")
+    assert cfg == ElectricityConfig(mode=1, flags=7, voltage=230.0, power_factor=1.0)
+    assert format_electricity_config(cfg) == ("1", "7", "230", "1.00")
+    assert format_electricity_config(
+        ElectricityConfig(mode=1, flags=7, voltage=232.5, power_factor=0.95)
+    ) == ("1", "7", "232.5", "0.95")
+
+
+def test_parse_clock() -> None:
+    assert parse_clock("OK,CLOCK,1789825772,1789829372") == (1789825772, 1789829372)
+
+
+def test_parse_udp_target() -> None:
+    assert parse_udp_target("OK,UDP,,192.168.1.1,22600") == ("192.168.1.1", 22600)
+    assert parse_udp_target("OK,UDP,,0.0.0.0,0") == ("0.0.0.0", 0)
+
+
+@pytest.mark.parametrize("raw", ["OK,MAC,443719000677", "OK,MAC,44:37:19:00:06:77"])
+def test_parse_mac(raw: str) -> None:
+    assert parse_mac(raw) == "44:37:19:00:06:77"
+
+
+def test_parse_version_joins_fields() -> None:
+    assert parse_version("OK,VERSION,NOWL,2.3,1234") == "NOWL 2.3 1234"
+
+
+def test_parse_uptime_keeps_text() -> None:
+    assert parse_uptime("OK,UPTIME,3 Mins 2 Secs") == "3 Mins 2 Secs"
+
+
+@pytest.mark.parametrize(
+    ("func", "raw"),
+    [
+        (parse_clock, "OK,UPTIME,3 Mins"),
+        (parse_clock, "ERROR"),
+        (parse_device_status, "OK,DEVICE,0,2FC"),
+        (parse_udp_target, "OK,UDP,192.168.1.1"),
+        (parse_electricity_config, "OK,ELECTRICITY,1,7"),
+    ],
+)
+def test_parsers_reject_unexpected(func, raw: str) -> None:
+    with pytest.raises(OwlProtocolError):
+        func(raw)
