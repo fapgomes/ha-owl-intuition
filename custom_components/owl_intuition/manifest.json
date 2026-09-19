@@ -1,0 +1,13 @@
+{
+  "domain": "owl_intuition",
+  "name": "OWL Intuition",
+  "codeowners": ["@fapgomes"],
+  "config_flow": true,
+  "dependencies": ["network"],
+  "documentation": "https://github.com/fapgomes/ha-owl-intuition",
+  "integration_type": "device",
+  "iot_class": "local_push",
+  "issue_tracker": "https://github.com/fapgomes/ha-owl-intuition/issues",
+  "requirements": [],
+  "version": "0.1.0"
+}

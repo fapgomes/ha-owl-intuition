@@ -1,0 +1,85 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to your Network OWL",
+        "description": "All communication stays on your LAN. The UDP key is shown in the OWL Intuition dashboard under System → Advanced Settings → Data Push.",
+        "data": {
+          "host": "Network OWL IP address",
+          "udp_key": "UDP key",
+          "push_host": "Send readings to (Home Assistant IP)",
+          "push_port": "UDP port for readings",
+          "multicast": "Also listen for multicast readings"
+        },
+        "data_description": {
+          "push_host": "The Network OWL will push readings to this address. Pre-filled with this Home Assistant's IP.",
+          "multicast": "Only needed for Network OWLs that broadcast on 224.192.32.19. Off by default."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "No response from the Network OWL. Check the IP address and the UDP key (a wrong key produces no reply).",
+      "invalid_key": "The UDP key must be 7 or 8 hexadecimal characters.",
+      "push_config_failed": "The Network OWL answered but refused the push configuration."
+    },
+    "abort": {
+      "already_configured": "This Network OWL is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "OWL Intuition options",
+        "data": {
+          "push_host": "Send readings to (Home Assistant IP)",
+          "push_port": "UDP port for readings",
+          "multicast": "Also listen for multicast readings",
+          "poll_interval": "Diagnostics polling interval (seconds)"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "power_1": {"name": "Power phase 1"},
+      "power_2": {"name": "Power phase 2"},
+      "power_3": {"name": "Power phase 3"},
+      "power_total": {"name": "Power total"},
+      "energy_day_1": {"name": "Energy today phase 1"},
+      "energy_day_2": {"name": "Energy today phase 2"},
+      "energy_day_3": {"name": "Energy today phase 3"},
+      "energy_day_total": {"name": "Energy today total"},
+      "battery": {"name": "Transmitter battery"},
+      "rssi": {"name": "Signal strength"},
+      "lqi": {"name": "Link quality"},
+      "last_seen": {"name": "Transmitter last seen"},
+      "uptime": {"name": "Uptime"},
+      "clock_offset": {"name": "Clock offset"}
+    },
+    "binary_sensor": {
+      "connectivity": {"name": "Connectivity"}
+    },
+    "number": {
+      "voltage": {"name": "Voltage"},
+      "power_factor": {"name": "Power factor"}
+    },
+    "button": {
+      "pair": {"name": "Pair transmitter"},
+      "sync_clock": {"name": "Sync clock"},
+      "reboot": {"name": "Reboot"}
+    }
+  },
+  "issues": {
+    "no_data": {
+      "title": "No readings from the Network OWL",
+      "description": "Home Assistant has not received readings from {name} for more than 5 minutes. Check that the transmitter is paired (blue LED flashing every 12–60 s), that the Network OWL is on the LAN, and that nothing blocks UDP port {port} on this host."
+    },
+    "clock_not_synced": {
+      "title": "Network OWL clock could not be set",
+      "description": "{name} rebooted and lost its clock, and the automatic clock sync failed. Daily energy totals will reset at the wrong time until the clock is set. Use the “Sync clock” button or check the UDP key."
+    }
+  },
+  "exceptions": {
+    "command_failed": {"message": "The Network OWL did not accept the command: {error}"}
+  }
+}

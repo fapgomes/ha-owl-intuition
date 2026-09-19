@@ -1,0 +1,85 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Ligar ao Network OWL",
+        "description": "Toda a comunicação fica na rede local. A chave UDP está no dashboard OWL Intuition em System → Definições Avançadas → Criar transferência de dados.",
+        "data": {
+          "host": "Endereço IP do Network OWL",
+          "udp_key": "Chave UDP",
+          "push_host": "Enviar leituras para (IP do Home Assistant)",
+          "push_port": "Porta UDP das leituras",
+          "multicast": "Escutar também leituras em multicast"
+        },
+        "data_description": {
+          "push_host": "O Network OWL envia as leituras para este endereço. Pré-preenchido com o IP deste Home Assistant.",
+          "multicast": "Só é necessário em Network OWLs que emitam para 224.192.32.19. Desligado por omissão."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Sem resposta do Network OWL. Verifica o IP e a chave UDP (uma chave errada não produz resposta).",
+      "invalid_key": "A chave UDP tem de ter 7 ou 8 caracteres hexadecimais.",
+      "push_config_failed": "O Network OWL respondeu mas recusou a configuração do envio de leituras."
+    },
+    "abort": {
+      "already_configured": "Este Network OWL já está configurado."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Opções do OWL Intuition",
+        "data": {
+          "push_host": "Enviar leituras para (IP do Home Assistant)",
+          "push_port": "Porta UDP das leituras",
+          "multicast": "Escutar também leituras em multicast",
+          "poll_interval": "Intervalo de diagnóstico (segundos)"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "power_1": {"name": "Potência fase 1"},
+      "power_2": {"name": "Potência fase 2"},
+      "power_3": {"name": "Potência fase 3"},
+      "power_total": {"name": "Potência total"},
+      "energy_day_1": {"name": "Energia hoje fase 1"},
+      "energy_day_2": {"name": "Energia hoje fase 2"},
+      "energy_day_3": {"name": "Energia hoje fase 3"},
+      "energy_day_total": {"name": "Energia hoje total"},
+      "battery": {"name": "Bateria do emissor"},
+      "rssi": {"name": "Intensidade do sinal"},
+      "lqi": {"name": "Qualidade da ligação"},
+      "last_seen": {"name": "Último sinal do emissor"},
+      "uptime": {"name": "Tempo ligado"},
+      "clock_offset": {"name": "Desvio do relógio"}
+    },
+    "binary_sensor": {
+      "connectivity": {"name": "Conectividade"}
+    },
+    "number": {
+      "voltage": {"name": "Tensão"},
+      "power_factor": {"name": "Fator de potência"}
+    },
+    "button": {
+      "pair": {"name": "Emparelhar emissor"},
+      "sync_clock": {"name": "Sincronizar relógio"},
+      "reboot": {"name": "Reiniciar"}
+    }
+  },
+  "issues": {
+    "no_data": {
+      "title": "Sem leituras do Network OWL",
+      "description": "O Home Assistant não recebe leituras de {name} há mais de 5 minutos. Confirma que o emissor está emparelhado (LED azul a piscar a cada 12–60 s), que o Network OWL está na rede local, e que nada bloqueia a porta UDP {port} neste anfitrião."
+    },
+    "clock_not_synced": {
+      "title": "Não foi possível acertar o relógio do Network OWL",
+      "description": "{name} reiniciou e perdeu o relógio, e a sincronização automática falhou. A energia diária vai reiniciar à hora errada até o relógio ser acertado. Usa o botão “Sincronizar relógio” ou verifica a chave UDP."
+    }
+  },
+  "exceptions": {
+    "command_failed": {"message": "O Network OWL não aceitou o comando: {error}"}
+  }
+}
