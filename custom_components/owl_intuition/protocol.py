@@ -5,6 +5,7 @@ unit-tested on its own and reused outside the integration.
 """
 from __future__ import annotations
 
+import asyncio
 import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -229,3 +230,111 @@ def parse_version(raw: str) -> str:
 
 def parse_uptime(raw: str) -> str:
     return ",".join(_fields(raw, "UPTIME", 1)).strip()
+
+
+class _ResponseProtocol(asyncio.DatagramProtocol):
+    """Collect the single datagram the device sends back."""
+
+    def __init__(self, future: asyncio.Future[str]) -> None:
+        self._future = future
+
+    def datagram_received(self, data: bytes, addr: tuple[str, int]) -> None:
+        if not self._future.done():
+            self._future.set_result(data.decode(errors="replace"))
+
+    def error_received(self, exc: Exception) -> None:
+        if not self._future.done():
+            self._future.set_exception(OwlProtocolError(f"socket error: {exc}"))
+
+
+class OwlClient:
+    """Send authenticated commands to the Network OWL command port."""
+
+    def __init__(
+        self,
+        host: str,
+        key: str,
+        *,
+        port: int = COMMAND_PORT,
+        timeout: float = 3.0,
+        retries: int = 2,
+    ) -> None:
+        self.host = host
+        self.port = port
+        self.timeout = timeout
+        self.retries = retries
+        self._key = normalize_key(key)
+
+    async def command(self, *parts: str, expect_response: bool = True) -> str:
+        """Send `PART,PART,...,KEY` and return the raw reply text."""
+        payload = ",".join((*parts, self._key)).encode()
+        loop = asyncio.get_running_loop()
+        for attempt in range(self.retries + 1):
+            future: asyncio.Future[str] = loop.create_future()
+            transport, _ = await loop.create_datagram_endpoint(
+                lambda: _ResponseProtocol(future), remote_addr=(self.host, self.port)
+            )
+            try:
+                transport.sendto(payload)
+                if not expect_response:
+                    return ""
+                return await asyncio.wait_for(future, self.timeout)
+            except TimeoutError:
+                if attempt == self.retries:
+                    break
+            finally:
+                transport.close()
+        raise OwlTimeoutError(
+            f"no response from {self.host}:{self.port} to {parts[0]} "
+            "(wrong key, wrong host or device offline)"
+        )
+
+    async def get_mac(self) -> str:
+        return parse_mac(await self.command("GET", "MAC"))
+
+    async def get_version(self) -> str:
+        return parse_version(await self.command("GET", "VERSION"))
+
+    async def get_device_list(self) -> tuple[str, ...]:
+        return parse_device_list(await self.command("GET", "DEVICE", "ALL"))
+
+    async def get_device(self, index: int = 0) -> DeviceStatus:
+        return parse_device_status(await self.command("GET", "DEVICE", str(index)))
+
+    async def get_udp_target(self) -> tuple[str, int]:
+        return parse_udp_target(await self.command("GET", "UDP"))
+
+    async def set_udp_target(self, ip: str, port: int) -> None:
+        parse_udp_target(await self.command("SET", "UDP", "", ip, str(port)))
+
+    async def save(self) -> None:
+        _fields(await self.command("SAVE"), "SAVE", 0)
+
+    async def get_electricity_config(self) -> ElectricityConfig:
+        return parse_electricity_config(await self.command("GET", "ELECTRICITY"))
+
+    async def set_electricity_config(self, cfg: ElectricityConfig) -> ElectricityConfig:
+        return parse_electricity_config(
+            await self.command("SET", "ELECTRICITY", *format_electricity_config(cfg))
+        )
+
+    async def get_clock(self) -> tuple[int, int]:
+        return parse_clock(await self.command("GET", "CLOCK"))
+
+    async def set_clock(self, epoch_utc: int) -> tuple[int, int]:
+        return parse_clock(await self.command("SET", "CLOCK", str(epoch_utc)))
+
+    async def set_timezone(self, offset_seconds: int) -> None:
+        _fields(await self.command("SET", "TZ", str(offset_seconds)), "TZ", 1)
+
+    async def set_dst(self, enabled: bool) -> None:
+        _fields(await self.command("SET", "DST", "1" if enabled else "0"), "DST", 1)
+
+    async def get_uptime(self) -> str:
+        return parse_uptime(await self.command("GET", "UPTIME"))
+
+    async def scan(self, device_type: int = 180) -> None:
+        _fields(await self.command("SCAN", str(device_type)), "SCAN", 0)
+
+    async def reboot(self) -> None:
+        await self.command("REBOOT", expect_response=False)
