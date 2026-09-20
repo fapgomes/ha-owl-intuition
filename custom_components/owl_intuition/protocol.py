@@ -13,6 +13,7 @@ from xml.etree import ElementTree
 
 COMMAND_PORT = 5100
 DEFAULT_PUSH_PORT = 22600
+SAVE_TIMEOUT = 10.0  # SAVE writes flash; the device answers after ~4 s
 MULTICAST_GROUP = "224.192.32.19"
 
 _KEY_RE = re.compile(r"^[0-9A-F]{7,8}$")
@@ -265,9 +266,12 @@ class OwlClient:
         self.retries = retries
         self._key = normalize_key(key)
 
-    async def command(self, *parts: str, expect_response: bool = True) -> str:
+    async def command(
+        self, *parts: str, expect_response: bool = True, timeout: float | None = None
+    ) -> str:
         """Send `PART,PART,...,KEY` and return the raw reply text."""
         payload = ",".join((*parts, self._key)).encode()
+        wait = self.timeout if timeout is None else timeout
         loop = asyncio.get_running_loop()
         for attempt in range(self.retries + 1):
             future: asyncio.Future[str] = loop.create_future()
@@ -278,7 +282,7 @@ class OwlClient:
                 transport.sendto(payload)
                 if not expect_response:
                     return ""
-                return await asyncio.wait_for(future, self.timeout)
+                return await asyncio.wait_for(future, wait)
             except TimeoutError:
                 if attempt == self.retries:
                     break
@@ -308,7 +312,7 @@ class OwlClient:
         parse_udp_target(await self.command("SET", "UDP", "", ip, str(port)))
 
     async def save(self) -> None:
-        _fields(await self.command("SAVE"), "SAVE", 0)
+        _fields(await self.command("SAVE", timeout=SAVE_TIMEOUT), "SAVE", 0)
 
     async def get_electricity_config(self) -> ElectricityConfig:
         return parse_electricity_config(await self.command("GET", "ELECTRICITY"))

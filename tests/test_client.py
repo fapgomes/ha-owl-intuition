@@ -74,3 +74,11 @@ async def test_reboot_does_not_wait_for_a_reply(fake_owl: FakeOwl) -> None:
     await client.reboot()  # no response configured; must not raise
     await asyncio.sleep(0.05)  # let the fake server's loop iteration run
     assert fake_owl.received == [f"REBOOT,{KEY}"]
+
+
+async def test_save_waits_for_slow_flash_write(fake_owl: FakeOwl) -> None:
+    """The real device takes ~4 s to answer SAVE; other commands answer in ms."""
+    fake_owl.delays["SAVE"] = 0.5  # longer than the 0.2 s general timeout
+    client = make_client(fake_owl)
+    await client.save()
+    assert fake_owl.received == [f"SAVE,{KEY}"]  # one attempt, no retries needed

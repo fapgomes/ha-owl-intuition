@@ -34,6 +34,7 @@ class FakeOwl(asyncio.DatagramProtocol):
         self.key = key
         self.responses = dict(responses)
         self.received: list[str] = []
+        self.delays: dict[str, float] = {}  # command -> seconds before answering
         self.host = "127.0.0.1"
         self.port = 0
         self.transport: asyncio.DatagramTransport | None = None
@@ -50,7 +51,13 @@ class FakeOwl(asyncio.DatagramProtocol):
             return  # the real device stays silent on a bad key
         response = self.responses.get(command)
         if response is not None and self.transport is not None:
-            self.transport.sendto(response.encode(), addr)
+            delay = self.delays.get(command, 0.0)
+            if delay:
+                asyncio.get_running_loop().call_later(
+                    delay, self.transport.sendto, response.encode(), addr
+                )
+            else:
+                self.transport.sendto(response.encode(), addr)
 
 
 @pytest.fixture
