@@ -66,5 +66,3 @@ python3 -m venv .venv
 .venv/bin/pip install -r requirements_test.txt
 .venv/bin/pytest
 ```
-
-Design and device protocol notes: `docs/superpowers/specs/`.
