@@ -13,3 +13,23 @@ def test_icon_keys_match_translation_keys() -> None:
         for key, spec in entries.items():
             assert key in names[platform], f"{platform}.{key} has an icon but no name"
             assert spec["default"].startswith("mdi:"), f"{platform}.{key}"
+
+
+def test_brand_assets_have_the_sizes_home_assistant_expects() -> None:
+    from PIL import Image
+
+    brand = COMPONENT / "brand"
+    expected = {
+        "icon.png": (256, 256),
+        "icon@2x.png": (512, 512),
+        "dark_icon.png": (256, 256),
+        "dark_icon@2x.png": (512, 512),
+        "logo.png": (317, 160),
+        "logo@2x.png": (634, 320),
+        "dark_logo.png": (317, 160),
+        "dark_logo@2x.png": (634, 320),
+    }
+    for name, size in expected.items():
+        with Image.open(brand / name) as image:
+            assert image.size == size, name
+            assert image.mode == "RGBA", name
