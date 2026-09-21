@@ -1,3 +1,5 @@
+<img src="custom_components/owl_intuition/brand/logo.png" alt="OWL Intuition" width="317">
+
 # OWL Intuition for Home Assistant (local only)
 
 Home Assistant integration for the **OWL Intuition Network OWL** electricity
@@ -66,3 +68,7 @@ python3 -m venv .venv
 .venv/bin/pip install -r requirements_test.txt
 .venv/bin/pytest
 ```
+
+## License
+
+GPL-3.0. The owl and lightning-bolt glyphs are Material Design Icons (Apache 2.0).
