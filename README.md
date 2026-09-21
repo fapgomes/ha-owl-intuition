@@ -38,9 +38,29 @@ you can block the device's Internet access and keep everything at home.
 
 ## Installation
 
-HACS → Integrations → ⋮ → Custom repositories → add this repository as
-"Integration" → install → restart Home Assistant → Settings → Devices &
-services → Add integration → **OWL Intuition**.
+### HACS (recommended)
+
+**One-click:** open this repository in your Home Assistant's HACS (requires
+HACS installed). It adds the custom repository and offers to download it:
+
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=fapgomes&repository=ha-owl-intuition&category=integration)
+
+Manual alternative: HACS → ⋮ → **Custom repositories** → add
+`https://github.com/fapgomes/ha-owl-intuition` as **Integration** → search
+for "OWL Intuition" → **Download**. Restart Home Assistant afterwards.
+
+### Manual
+
+Copy `custom_components/owl_intuition` into your `config/custom_components/`
+folder and restart Home Assistant.
+
+## Configuration
+
+**One-click:** start the config flow in your Home Assistant:
+
+[![Open your Home Assistant instance and start setting up a new integration.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=owl_intuition)
+
+Or go to Settings → Devices & services → Add integration → **OWL Intuition**.
 
 Enter the Network OWL IP, the UDP key, and confirm the push destination
 (pre-filled with your Home Assistant IP). The integration sends `SET,UDP`
