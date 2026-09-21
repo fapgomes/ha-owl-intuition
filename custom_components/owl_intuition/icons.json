@@ -1,0 +1,27 @@
+{
+  "entity": {
+    "sensor": {
+      "power_total": {"default": "mdi:home-lightning-bolt"},
+      "energy_day_total": {"default": "mdi:home-lightning-bolt-outline"},
+      "lqi": {"default": "mdi:signal-variant"},
+      "last_seen": {"default": "mdi:owl"},
+      "uptime": {"default": "mdi:timer-outline"},
+      "clock_offset": {"default": "mdi:clock-alert-outline"}
+    },
+    "binary_sensor": {
+      "connectivity": {
+        "default": "mdi:owl",
+        "state": {"off": "mdi:owl"}
+      }
+    },
+    "number": {
+      "voltage": {"default": "mdi:sine-wave"},
+      "power_factor": {"default": "mdi:angle-acute"}
+    },
+    "button": {
+      "pair": {"default": "mdi:link-variant-plus"},
+      "sync_clock": {"default": "mdi:clock-check-outline"},
+      "reboot": {"default": "mdi:restart"}
+    }
+  }
+}
